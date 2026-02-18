@@ -8,7 +8,7 @@
 VERSION="@@VERSION@@"
 
 ME=$(basename "$0")
-EXCLUDE=""
+IGNORE=""
 PRUNE_DIR=""
 TYPE=""
 
@@ -43,10 +43,10 @@ EOF
 }
 
 # --- Parse Flags ---
-while getopts "t:e:p:hv" opt; do
+while getopts "t:i:p:hv" opt; do
     case "$opt" in
         t) TYPE=$OPTARG ;;
-        e) EXCLUDE=$OPTARG ;;
+        e) IGNORE=$OPTARG ;;
         p) PRUNE_DIR=$OPTARG ;;
         h) usage; exit 0 ;;
         v) echo "$VERSION"; exit 0 ;;
@@ -88,8 +88,8 @@ else
     FIND_CMD+=( \( -type f -o -type d \) )
 fi
 
-# 4. Add Exclude
-[[ -n "$EXCLUDE" ]] && FIND_CMD+=(-not -iname "*$EXCLUDE*")
+# 4. Add Ignore
+[[ -n "$IGNORE" ]] && FIND_CMD+=(-not -iname "*$IGNORE*")
 
 echo "$ME: Searching... (Skipping: ${PRUNE_DIR:-None})"
 
