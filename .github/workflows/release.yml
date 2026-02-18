@@ -1,0 +1,42 @@
+# ==============================================================================
+#  Release Workflow
+#  To release a new version, tag a commit and push:
+#
+#    git tag v1.0.0
+#    git push origin v1.0.0
+#
+#  This workflow will automatically:
+#    1. Stamp the version into the snd script
+#    2. Create a GitHub Release
+#    3. Attach the stamped binary as a release asset
+# ==============================================================================
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Stamp version into script
+        run: |
+          sed "s/@@VERSION@@/${{ github.ref_name }}/" snd > snd-release
+          chmod +x snd-release
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          files: snd-release
+          generate_release_notes: true

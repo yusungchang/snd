@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ==============================================================================
-#  Search & Destroy (snd) - Interactive Edition
+#  Search & Destroy (snd) - Interactive Edition (for macOS)
 #  Copyright (c) 2026 Yu-Sung Chang | MIT License
 # ==============================================================================
 
@@ -9,12 +9,15 @@ VERSION="@@VERSION@@"
 
 ME=$(basename "$0")
 IGNORE=""
-PRUNE_DIR=""
+PRUNE_DIRS=()
 TYPE=""
+DEBUG=false
+
+trap 'kill $(jobs -p) 2>/dev/null' EXIT INT TERM
 
 usage() {
     cat << EOF >&2
-$ME - Search and destroy files or directories interactiely.
+$ME - Search and destroy files or directories interactively (for macOS).
 Copyright (c) 2026 Yu-Sung Chang. Released under the MIT License.
 
 Usage: $ME [OPTIONS] <STRING>
@@ -23,11 +26,12 @@ Arguments:
   STRING       String to match (e.g. "microgsoft" creates the pattern "*microsoft*")
   
 Options:
-  -t TYPE      Search type: f (file), d (directory) [Default: both]
-  -i STRING    Ignore matches containing this string (e.g. "com.apple")
-  -p FOLDER    Prune an entire directory (e.g. "CloudStorage")
-  -h           Display this help and exit
-  -v           Display version and exit
+  -t TYPE       Search type: f (file), d (directory) [Default: both]
+  -d            Dry run mode (show what would be deleted without deleting)
+  -i STRING     Ignore matches containing this string (e.g. "com.apple")
+  -p DIR        Prune a directory (e.g. "CloudStorage"). Repeatable: -p dir1 -p dir2
+  -h            Display this help and exit
+  -v            Display version and exit
 
 Interface Controls:
   Arrows       Move selection
@@ -37,17 +41,18 @@ Interface Controls:
 
 Example:
   $ME microsoft                # Find files AND directories containing 'microsoft'.
-  $ME -t d -i apple plugin     # Find directories containing 'plug-in' but not 'apple'.
-  $ME -p CloudStorage adobe    # Find files and directories cotaining 'adobe' but not in CloudStorage directory.
+  $ME -t d -i apple plugin     # Find directories containing 'plugin' but not 'apple'.
+  $ME -p CloudStorage adobe    # Find files and directories containing 'adobe' but not in CloudStorage directory.
 EOF
 }
 
 # --- Parse Flags ---
-while getopts "t:i:p:hv" opt; do
+while getopts "t:i:p:dhv" opt; do
     case "$opt" in
         t) TYPE=$OPTARG ;;
-        e) IGNORE=$OPTARG ;;
-        p) PRUNE_DIR=$OPTARG ;;
+        i) IGNORE=$OPTARG ;;
+        p) PRUNE_DIRS+=("$OPTARG") ;;
+        d) DEBUG=true ;;
         h) usage; exit 0 ;;
         v) echo "$VERSION"; exit 0 ;;
         *) usage; exit 1 ;;
@@ -73,11 +78,14 @@ fi
 FIND_CMD=(find .)
 
 # 1. Add Pruning (Must be first)
-if [[ -n "$PRUNE_DIR" ]]; then
-    FIND_CMD+=(-path "*/$PRUNE_DIR" -prune -o)
+if [[ ${#PRUNE_DIRS[@]} -gt 0 ]]; then
+    for dir in "${PRUNE_DIRS[@]}"; do
+        FIND_CMD+=(-path "*/$dir" -prune -o)
+    done
 fi
 
 # 2. Add Name Pattern
+FIND_CMD+=(\() # Start a new group for the name pattern
 FIND_CMD+=(-iname "*$PATTERN*")
 
 # 3. Add Type (f, d, or both)
@@ -91,24 +99,29 @@ fi
 # 4. Add Ignore
 [[ -n "$IGNORE" ]] && FIND_CMD+=(-not -iname "*$IGNORE*")
 
-echo "$ME: Searching... (Skipping: ${PRUNE_DIR:-None})"
+# 5. Finish the command
+FIND_CMD+=(\))
+FIND_CMD+=(-print0)
 
 # --- Select Targets  ---
-TARGETS=$("${FIND_CMD[@]}" -print0 2>/dev/null | \
-    xargs -0 -n1 bash -c '
-        item="$1"
-        # Determine if it is a Dir or File for the display
-        [[ -d "$item" ]] && label="DIR" || label="FIL"
+echo "$ME: Searching... (Skipping: ${PRUNE_DIRS[*]:-None})"
+
+TARGETS=$(
+    while IFS= read -r -d '' item; do
+        [[ -d "$item" ]] && label="D" || label="F"
         size=$(du -sh "$item" 2>/dev/null | cut -f1)
         last_mod=$(stat -f "%Sm" -t "%Y-%m-%d" "$item" 2>/dev/null)
-        printf "[%3s | %4s | %10s] %s\n" "$label" "${size:-0B}" "${last_mod:-Unknown}" "$item"
-    ' -- | \
+        printf "[%s|%4s|%10s]\t%s\n" "$label" "${size:-0B}" "${last_mod:-Unknown}" "$item"
+    done < <("${FIND_CMD[@]}" 2>/dev/null) | \
     fzf -m \
+        --delimiter=$'\t' \
+        --with-nth=1,2 \
         --header="TAB: Select | ENTER: Confirm selection | ESC: Quit" \
         --prompt="Search » " \
         --height=50% \
         --reverse \
-        --border)
+        --border
+)
 
 if [[ -z "$TARGETS" ]]; then
     echo "Nothing selected. Exiting."
@@ -116,7 +129,7 @@ if [[ -z "$TARGETS" ]]; then
 fi
 
 # Clean the selection (strip the size/date prefix for the rm command)
-CLEAN_TARGETS=$(echo "$TARGETS" | sed 's/^\[.*\] //')
+CLEAN_TARGETS=$(echo "$TARGETS" | cut -f2)
 COUNT=$(echo "$CLEAN_TARGETS" | wc -l | xargs)
 
 # --- Confirm and Delete ---
@@ -127,11 +140,19 @@ echo "$CLEAN_TARGETS"
 echo "----------------------------------------------------"
 echo ""
 
+if [[ "$DEBUG" == true ]]; then
+    echo "*** DRY RUN — nothing will actually be deleted ***"
+fi
 read -p "$ME: Are you absolutely sure? [y/N] " confirm
+
 if [[ "$confirm" =~ ^[Yy]$ ]]; then
     echo "$CLEAN_TARGETS" | while read -r line; do
-        rm -rf "$line"
-        echo "Deleted: $line"
+        if [[ "$DEBUG" == true ]]; then
+            echo "[DRY RUN] Would delete: $line"
+        else
+            rm -rf "$line"
+            echo "Deleted: $line"
+        fi
     done
     echo "Cleanup complete."
 else
