@@ -12,13 +12,13 @@ TYPE=""
 
 usage() {
     cat << EOF >&2
-{$ME} - Search and destroy files or directories interactiely.
+$ME - Search and destroy files or directories interactiely.
 Copyright (c) 2026 Yu-Sung Chang. Released under the MIT License.
 
-Usage: {$ME} [OPTIONS] <STRING>
+Usage: $ME [OPTIONS] <STRING>
 
 Arguments:
-  STRING       String to match (e.g. "microsoft" creates the pattern "*microsoft*")
+  STRING       String to match (e.g. "microgsoft" creates the pattern "*microsoft*")
   
 Options:
   -t TYPE      Search type: f (file), d (directory) [Default: both]
@@ -33,13 +33,13 @@ Interface Controls:
   ESC          Quit without deleting
 
 Example:
-  {$ME} microsoft             # Find files AND directories containing 'microsoft'.
-  {$ME} -t d -e apple plugin  # Find directories containing 'plug-in' but not 'apple'.
+  $ME microsoft             # Find files AND directories containing 'microsoft'.
+  $ME -t d -e apple plugin  # Find directories containing 'plug-in' but not 'apple'.
 EOF
 }
 
 # --- Parse Flags ---
-while getopts "t:e:p:h" opt; do
+while getopts "t:e:p:h" opt;
     case "$opt" in
         t) TYPE=$OPTARG ;;
         e) EXCLUDE=$OPTARG ;;
