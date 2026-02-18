@@ -1,0 +1,136 @@
+#!/bin/bash
+
+# ==============================================================================
+#  Search & Destroy (snd) - Interactive Edition
+#  Copyright (c) 2026 Yu-Sung Chang | MIT License
+# ==============================================================================
+
+ME=$(basename "$0")
+EXCLUDE=""
+PRUNE_DIR=""
+TYPE=""
+
+usage() {
+    cat << EOF >&2
+{$ME} - Search and destroy files or directories interactiely.
+Copyright (c) 2026 Yu-Sung Chang. Released under the MIT License.
+
+Usage: {$ME} [OPTIONS] <STRING>
+
+Arguments:
+  STRING       String to match (e.g. "microsoft" creates the pattern "*microsoft*")
+  
+Options:
+  -t TYPE      Search type: f (file), d (directory) [Default: both]
+  -e STRING    Ignore matches containing this string (e.g. "com.apple")
+  -p FOLDER    Skip/Prune an entire directory (e.g. "CloudStorage")
+  -h           Display this help and exit
+
+Interface Controls:
+  Arrows       Move selection
+  TAB          Select multiple items for deletion
+  ENTER        Confirm selection and delete
+  ESC          Quit without deleting
+
+Example:
+  {$ME} microsoft             # Find files AND directories containing 'microsoft'
+  {$ME} -t d -e apple plugin  # Find directories containing 'plug-in', ignore ones containing 'apple'
+EOF
+}
+
+# --- Parse Flags ---
+while getopts "t:e:p:h" opt; do
+    case "$opt" in
+        t) TYPE=$OPTARG ;;
+        e) EXCLUDE=$OPTARG ;;
+        p) PRUNE_DIR=$OPTARG ;;
+        h) usage; exit 0 ;;
+        *) usage; exit 1 ;;
+    esac
+done
+
+# Shift the arguments so that $1 and $2 become the Pattern and Type
+shift $((OPTIND-1))
+PATTERN=$1
+
+# --- Validate Input ---
+if [[ -z "$PATTERN" ]]; then
+    usage; exit 1
+fi
+
+# Ensure fzf is installed
+if ! command -v fzf &> /dev/null; then
+    echo "$ME: fzf not found. Please run 'brew install fzf' first." >&2
+    exit 1
+fi
+
+# --- Construct Find Command ---
+FIND_CMD=(find .)
+
+# 1. Add Pruning (Must be first)
+if [[ -n "$PRUNE_DIR" ]]; then
+    FIND_CMD+=(-path "*/$PRUNE_DIR" -prune -o)
+fi
+
+# 2. Add Name Pattern
+FIND_CMD+=(-iname "*$PATTERN*")
+
+# 3. Add Type (f, d, or both)
+if [[ "$TYPE" == "f" || "$TYPE" == "d" ]]; then
+    FIND_CMD+=(-type "$TYPE")
+else
+    # Logic for "both" requires an OR group in find
+    FIND_CMD+=( \( -type f -o -type d \) )
+fi
+
+# 4. Add Exclude
+[[ -n "$EXCLUDE" ]] && FIND_CMD+=(-not -iname "*$EXCLUDE*")
+
+echo "$ME: Searching... (Skipping: ${PRUNE_DIR:-None})"
+
+# --- Select Targets  ---
+TARGETS=$("${FIND_CMD[@]}" -print0 2>/dev/null | \
+    xargs -0 -n1 bash -c '
+        item="$1"
+        # Determine if it is a Dir or File for the display
+        [[ -d "$item" ]] && label="DIR" || label="FIL"
+        size=$(du -sh "$item" 2>/dev/null | cut -f1)
+        last_mod=$(stat -f "%Sm" -t "%Y-%m-%d" "$item" 2>/dev/null)
+        printf "[%3s | %4s | %10s] %s\n" "$label" "${size:-0B}" "${last_mod:-Unknown}" "$item"
+    ' -- | \
+    fzf -m \
+        --header="TAB: Select | ENTER: Confirm selection | ESC: Quit" \
+        --prompt="Search » " \
+        --pointer="▶" \
+        --marker="[X]" \
+        --height=50% \
+        --reverse \
+        --border)
+
+if [[ -z "$TARGETS" ]]; then
+    echo "Nothing selected. Exiting."
+    exit 0
+fi
+
+# Clean the selection (strip the size/date prefix for the rm command)
+CLEAN_TARGETS=$(echo "$TARGETS" | sed 's/^\[.*\] //')
+COUNT=$(echo "$CLEAN_TARGETS" | wc -l | xargs)
+
+# --- Confirm and Delete ---
+echo ""
+echo "----------------------------------------------------"
+echo "THE FOLLOWING $COUNT ITEMS WILL BE DELETED:"
+echo "$CLEAN_TARGETS"
+echo "----------------------------------------------------"
+echo ""
+
+read -p "$ME: Are you absolutely sure? [y/N] " confirm
+if [[ "$confirm" =~ ^[Yy]$ ]]; then
+    echo "$CLEAN_TARGETS" | while read -r line; do
+        rm -rf "$line"
+        echo "Deleted: $line"
+    done
+    echo "Cleanup complete."
+else
+    echo "Operation aborted. Nothing was deleted."
+fi
