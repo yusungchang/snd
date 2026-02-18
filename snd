@@ -33,8 +33,8 @@ Interface Controls:
   ESC          Quit without deleting
 
 Example:
-  {$ME} microsoft             # Find files AND directories containing 'microsoft'
-  {$ME} -t d -e apple plugin  # Find directories containing 'plug-in', ignore ones containing 'apple'
+  {$ME} microsoft             # Find files AND directories containing 'microsoft'.
+  {$ME} -t d -e apple plugin  # Find directories containing 'plug-in' but not 'apple'.
 EOF
 }
 
