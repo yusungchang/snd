@@ -3,7 +3,6 @@
 > Interactively find and delete files or directories by name — powered by [`fzf`](https://github.com/junegunn/fzf).
 
 ![Demo placeholder](assets/demo.gif)
-*↑ Replace with a screen recording or screenshot*
 
 ---
 
@@ -25,10 +24,23 @@
 
 ---
 
+## 🛠️ Permissions & Troubleshooting
+
+On macOS, some directories (like `~/Library/Containers` or `~/Library/Application Support`) are protected by **System Integrity Protection (SIP)** and **TCC**. 
+
+If you see an **"Operation not permitted"** error:
+
+1. Go to **System Settings** > **Privacy & Security** > **Full Disk Access**.
+2. Locate your terminal application (e.g., **Terminal**, **iTerm2**, or **Warp**).
+3. Toggle the switch to **On**.
+4. **Restart your terminal** and run `snd` again.
+
+---
+
 ## Installation
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/USERNAME/snd/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/yusungchang/snd/main/install.sh | bash
 ```
 
 You can inspect [`install.sh`](install.sh) before running — it downloads the latest release to `~/.local/bin` and ensures it's on your PATH.
@@ -96,16 +108,3 @@ snd -d microsoft
 ## License
 
 MIT © 2026 Yu-Sung Chang
-
----
-
-## Releasing a New Version
-
-Tag a commit and push — GitHub Actions handles the rest:
-
-```bash
-git tag v1.0.0
-git push origin v1.0.0
-```
-
-The workflow will stamp the version, create a GitHub Release, and attach the binary automatically.
