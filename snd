@@ -24,8 +24,8 @@ Arguments:
   
 Options:
   -t TYPE      Search type: f (file), d (directory) [Default: both]
-  -e STRING    Ignore matches containing this string (e.g. "com.apple")
-  -p FOLDER    Skip/Prune an entire directory (e.g. "CloudStorage")
+  -i STRING    Ignore matches containing this string (e.g. "com.apple")
+  -p FOLDER    Prune an entire directory (e.g. "CloudStorage")
   -h           Display this help and exit
   -v           Display version and exit
 
@@ -36,8 +36,9 @@ Interface Controls:
   ESC          Quit without deleting
 
 Example:
-  $ME microsoft             # Find files AND directories containing 'microsoft'.
-  $ME -t d -e apple plugin  # Find directories containing 'plug-in' but not 'apple'.
+  $ME microsoft                # Find files AND directories containing 'microsoft'.
+  $ME -t d -i apple plugin     # Find directories containing 'plug-in' but not 'apple'.
+  $ME -p CloudStorage adobe    # Find files and directories cotaining 'adobe' but not in CloudStorage directory.
 EOF
 }
 
