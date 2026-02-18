@@ -5,6 +5,8 @@
 #  Copyright (c) 2026 Yu-Sung Chang | MIT License
 # ==============================================================================
 
+VERSION="@@VERSION@@"
+
 ME=$(basename "$0")
 EXCLUDE=""
 PRUNE_DIR=""
@@ -25,6 +27,7 @@ Options:
   -e STRING    Ignore matches containing this string (e.g. "com.apple")
   -p FOLDER    Skip/Prune an entire directory (e.g. "CloudStorage")
   -h           Display this help and exit
+  -v           Display version and exit
 
 Interface Controls:
   Arrows       Move selection
@@ -39,12 +42,13 @@ EOF
 }
 
 # --- Parse Flags ---
-while getopts "t:e:p:h" opt; do
+while getopts "t:e:p:hv" opt; do
     case "$opt" in
         t) TYPE=$OPTARG ;;
         e) EXCLUDE=$OPTARG ;;
         p) PRUNE_DIR=$OPTARG ;;
         h) usage; exit 0 ;;
+        v) echo "$VERSION"; exit 0 ;;
         *) usage; exit 1 ;;
     esac
 done
