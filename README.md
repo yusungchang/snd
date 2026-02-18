@@ -1,5 +1,5 @@
-# snd
-snd - Search and destroy files or directories interactiely (for macOS)
+# Search & Destroy (for macOS)
+snd - Search and destroy files or directories interactiely
 Copyright (c) 2026 Yu-Sung Chang. Released under the MIT License.
 
 Usage: snd [OPTIONS] <STRING>
