@@ -39,7 +39,7 @@ EOF
 }
 
 # --- Parse Flags ---
-while getopts "t:e:p:h" opt;
+while getopts "t:e:p:h" opt; do
     case "$opt" in
         t) TYPE=$OPTARG ;;
         e) EXCLUDE=$OPTARG ;;
@@ -101,8 +101,6 @@ TARGETS=$("${FIND_CMD[@]}" -print0 2>/dev/null | \
     fzf -m \
         --header="TAB: Select | ENTER: Confirm selection | ESC: Quit" \
         --prompt="Search » " \
-        --pointer="▶" \
-        --marker="[X]" \
         --height=50% \
         --reverse \
         --border)
