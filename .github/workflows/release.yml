@@ -30,13 +30,13 @@ jobs:
 
       - name: Stamp version into script
         run: |
-          sed "s/@@VERSION@@/${{ github.ref_name }}/" snd > snd-release
-          chmod +x snd-release
+          sed "s/@@VERSION@@/${{ github.ref_name }}/" snd > /tmp/snd
+          chmod +x /tmp/snd
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           name: ${{ github.ref_name }}
           tag_name: ${{ github.ref_name }}
-          files: snd-release
+          files: /tmp/snd
           generate_release_notes: true
