@@ -34,6 +34,7 @@ if ! command -v fzf &> /dev/null; then
 fi
 
 # Ensure trash is installed
+# Built-in on macOS 15.0+. Earlier versions can install via: brew install trash
 if ! command -v trash &> /dev/null; then
     echo "Warning: trash is not installed. Please run: brew install trash" >&2
 fi
