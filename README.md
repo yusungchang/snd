@@ -19,7 +19,7 @@
 
 ## Requirements
 
-- macOS
+- macOS 15.0 or later (earlier versions require `brew install trash`)
 - [`fzf`](https://github.com/junegunn/fzf) — install with `brew install fzf`
 
 ---
