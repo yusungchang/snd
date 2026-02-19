@@ -74,6 +74,12 @@ if ! command -v fzf &> /dev/null; then
     exit 1
 fi
 
+# Ensure trash is installed
+if ! command -v trash &> /dev/null; then
+    echo "$ME: trash not found. Please run 'brew install trash' first." >&2
+    exit 1
+fi
+
 # --- Construct Find Command ---
 FIND_CMD=(find .)
 
@@ -135,7 +141,7 @@ COUNT=$(echo "$CLEAN_TARGETS" | wc -l | xargs)
 # --- Confirm and Delete ---
 echo ""
 echo "----------------------------------------------------"
-echo "THE FOLLOWING $COUNT ITEMS WILL BE DELETED:"
+echo "THE FOLLOWING $COUNT ITEMS WILL BE MOVED TO TRASH OR DELETED:"
 echo "$CLEAN_TARGETS"
 echo "----------------------------------------------------"
 echo ""
@@ -143,15 +149,25 @@ echo ""
 if [[ "$DEBUG" == true ]]; then
     echo "*** DRY RUN — nothing will actually be deleted ***"
 fi
-read -p "$ME: Are you absolutely sure? [y/N] " confirm
+read -p "$ME: Trash [y], Permanent delete [P], or Abort [N]? " confirm
 
 if [[ "$confirm" =~ ^[Yy]$ ]]; then
     echo "$CLEAN_TARGETS" | while read -r line; do
         if [[ "$DEBUG" == true ]]; then
-            echo "[DRY RUN] Would delete: $line"
+            echo "[DRY RUN] Would trash: $line"
+        else
+            trash "$line"
+            echo "Trashed: $line"
+        fi
+    done
+    echo "Cleanup complete."
+elif [[ "$confirm" == "P" ]]; then
+    echo "$CLEAN_TARGETS" | while read -r line; do
+        if [[ "$DEBUG" == true ]]; then
+            echo "[DRY RUN] Would permanently delete: $line"
         else
             rm -rf "$line"
-            echo "Deleted: $line"
+            echo "Permanently deleted: $line"
         fi
     done
     echo "Cleanup complete."

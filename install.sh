@@ -33,6 +33,11 @@ if ! command -v fzf &> /dev/null; then
     echo "Warning: fzf is not installed. Please run: brew install fzf" >&2
 fi
 
+# Ensure trash is installed
+if ! command -v trash &> /dev/null; then
+    echo "Warning: trash is not installed. Please run: brew install trash" >&2
+fi
+
 # Ensure ~/.local/bin is on PATH in .zshrc
 if [ ! -f "$ZSHRC" ]; then
     touch "$ZSHRC"
