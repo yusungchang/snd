@@ -2,8 +2,6 @@
 
 > Interactively find and delete files or directories by name — powered by [`fzf`](https://github.com/junegunn/fzf).
 
-![Demo placeholder](assets/demo.gif)
-
 ---
 
 ## Features
